@@ -13,7 +13,13 @@
 \usage{
 conda_list(conda = "auto")
 
-conda_create(envname = NULL, packages = "python", conda = "auto")
+conda_create(
+  envname = NULL,
+  packages = "python",
+  forge = TRUE,
+  channel = character(),
+  conda = "auto"
+)
 
 conda_remove(envname, packages = NULL, conda = "auto")
 
@@ -23,6 +29,7 @@ conda_install(
   forge = TRUE,
   channel = character(),
   pip = FALSE,
+  pip_options = character(),
   pip_ignore_installed = FALSE,
   conda = "auto",
   python_version = NULL,
@@ -53,6 +60,9 @@ specify multiple channels, including the Conda Forge, you can use
 
 \item{pip}{Boolean; use \code{pip} when downloading or installing packages? Defaults to \code{FALSE}.}
 
+\item{pip_options}{An optional character vector of additional command line
+arguments to be passed to \code{pip}. Only relevant when \code{pip = TRUE}.}
+
 \item{pip_ignore_installed}{Ignore installed versions when using pip. This is
 \code{TRUE} by default so that specific package versions can be installed even
 if they are downgrades. The \code{FALSE} option is useful for situations where
@@ -80,6 +90,7 @@ Anaconda / Miniconda installation and use that. \code{reticulate} will search th
 following locations:
 \enumerate{
 \item The location specified by the \code{reticulate.conda_binary} \R option;
+\item The \code{\link[=miniconda_path]{miniconda_path()}} location (if it exists);
 \item The program \code{PATH};
 \item A set of pre-defined locations where Conda is typically installed.
 }

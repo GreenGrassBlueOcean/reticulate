@@ -93,7 +93,11 @@ eng_python <- function(options) {
 
   # iterate over top-level nodes and extract line numbers
   lines <- vapply(parsed$body, function(node) {
-    node$lineno
+    if(py_has_attr(node, 'decorator_list') && length(node$decorator_list)) {
+      node$decorator_list[[1]]$lineno
+    } else {
+      node$lineno
+    }
   }, integer(1))
 
   # it's possible for multiple statements to live on the
@@ -138,11 +142,15 @@ eng_python <- function(options) {
     # save last value
     last_value <- py_last_value()
 
+    # use trailing semicolon to suppress output of return value
+    suppress <- grepl(";\\s*$", snippet)
+    compile_mode <- if (suppress) "exec" else "single"
+
     # run code and capture output
     captured <- if (capture_errors)
-      tryCatch(py_compile_eval(snippet), error = identity)
+      tryCatch(py_compile_eval(snippet, compile_mode), error = identity)
     else
-      py_compile_eval(snippet)
+      py_compile_eval(snippet, compile_mode)
 
     # handle matplotlib output
     captured <- eng_python_matplotlib_handle_output(captured, last_value, i == length(ranges))
@@ -257,10 +265,15 @@ eng_python_initialize_matplotlib <- function(options, context, envir) {
     # need to switch backends; otherwise, we can simply request to use a
     # specific one when the backend is initialized later
     sys <- import("sys", convert = FALSE)
-    if ("matplotlib.backends" %in% names(sys$modules))
+    if ("matplotlib.backends" %in% names(sys$modules)) {
       matplotlib$pyplot$switch_backend("agg")
-    else
-      matplotlib$use("agg", warn = FALSE, force = TRUE)
+    } else {
+      version <- numeric_version(matplotlib$`__version__`)
+      if (version < "3.3.0")
+        matplotlib$use("agg", warn = FALSE, force = TRUE)
+      else
+        matplotlib$use("agg", force = TRUE)
+    }
   }
 
   # double-check that we can load 'pyplot' (this can fail if matplotlib
